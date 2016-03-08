@@ -1,0 +1,25 @@
+// Copyright 2016-03-08
+// ChuanTonG.HuanG@Gmail.com  All rights reserved.
+//
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.toontong.box";
+option java_outer_classname = "BoxWorker";
+
+package worker;
+
+// Interface exported by the server.
+service Wroker{
+    rpc Add(AddReq) returns (AddResp){}
+}
+
+message AddReq{
+    int64 a = 1;
+    int64 b = 2;
+}
+
+message AddResp{
+    int64 sum = 1;
+}

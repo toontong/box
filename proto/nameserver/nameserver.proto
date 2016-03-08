@@ -1,0 +1,51 @@
+// Copyright 2016-03-08
+// ChuanTonG.HuanG@Gmail.com  All rights reserved.
+//
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.toontong.box";
+option java_outer_classname = "BoxNameServer";
+
+
+package nameserver;
+
+// Interface exported by the server.
+service NameService {
+
+    // 每5分钟向服务器(NameService)报活
+    rpc WorkerJoin(JoinReq) returns (JoinResp){}
+
+    rpc ListWorkers(Req) returns (stream Worker){}
+}
+
+message Req{
+    
+}
+
+message JoinReq{
+    uint64 workerId =1;
+    string host = 2;      // 监听端口
+    int32  port = 3;      // 监听端口
+    uint32 currConnection = 4;  // 当前连接数
+    uint32 closeConnection = 5; // 已关连接数
+    double cpuUsage = 6;        // cpu负载，百分比
+    string version = 7;
+}
+
+message JoinResp{
+    bool success = 1;
+    uint64 workerId = 2;
+    string errMsg = 3;
+}
+
+message Worker {
+    uint64 workerId = 1;
+    string listenAddr = 2;
+    uint32 currConnection = 3;
+    uint32 closeConnection=4;
+    double cpuUsage = 5;
+    int64  lastAlive = 6;
+    string version = 7;
+}
