@@ -2,9 +2,9 @@ package nameserver
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	// "github.com/golang/protobuf/proto"
@@ -13,9 +13,12 @@ import (
 	"github.com/toontong/box/libs/log"
 
 	pb "github.com/toontong/box/proto/nameserver"
+	"github.com/toontong/box/proto/ping"
 )
 
 type nameServer struct {
+	ping.PingService
+
 	wkMaper map[uint64]*pb.Worker
 }
 
@@ -31,7 +34,7 @@ func (s *nameServer) WorkerJoin(_ context.Context, req *pb.JoinReq) (*pb.JoinRes
 
 	var wk *pb.Worker
 	if req.WorkerId != 0 {
-		if w, ok := w.wkMaper[req.WorkerId]; ok {
+		if w, ok := s.wkMaper[req.WorkerId]; ok {
 			wk = w
 			wk.WorkerId = req.WorkerId
 		}
@@ -41,7 +44,7 @@ func (s *nameServer) WorkerJoin(_ context.Context, req *pb.JoinReq) (*pb.JoinRes
 		wk.WorkerId = s.genWorkerId(req.Host, req.Port)
 	}
 
-	wk.ListenAddr = fmt.Printf("%v:%v", req.Host, req.Port)
+	wk.ListenAddr = fmt.Sprintf("%v:%v", req.Host, req.Port)
 	wk.CurrConnection = req.CurrConnection
 	wk.CloseConnection = req.CloseConnection
 	wk.CpuUsage = req.CpuUsage
@@ -52,7 +55,7 @@ func (s *nameServer) WorkerJoin(_ context.Context, req *pb.JoinReq) (*pb.JoinRes
 
 	resp := new(pb.JoinResp)
 	resp.Success = true
-	resp.workerId = wk.WorkerId
+	resp.WorkerId = wk.WorkerId
 
 	return resp, nil
 
@@ -89,12 +92,21 @@ func inet_aton(ip string) int64 {
 	return sum
 }
 
-func (s nameServer) genWorkerId(host string, port int) uint64 {
+func (s nameServer) genWorkerId(host string, port int32) uint64 {
 	sum := inet_aton(host)
-	sum = sum<<32 + port
+	id := uint64(sum<<32 + int64(port))
+	for {
+		if _, ok := s.wkMaper[id]; !ok {
+			return id
+		}
+		// 如果 id < 2^32 表示随机生成
+		id = uint64(rand.Int31())
+		log.Infof("Gen WorkerId by Rand()->host[%v:%v]->id[%v]",
+			host, port, id)
+	}
 }
 
-func (s *nameServer) join(wk pb.Worker) {
+func (s *nameServer) join(wk *pb.Worker) {
 	s.wkMaper[wk.WorkerId] = wk
 	//TODO: tell  the gateway-server
 }

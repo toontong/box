@@ -21,31 +21,30 @@ service NameService {
 }
 
 message Req{
-    
 }
 
 message JoinReq{
-    uint64 workerId =1;
-    string host = 2;      // 监听端口
-    int32  port = 3;      // 监听端口
-    uint32 currConnection = 4;  // 当前连接数
-    uint32 closeConnection = 5; // 已关连接数
-    double cpuUsage = 6;        // cpu负载，百分比
-    string version = 7;
+    uint64 WorkerId = 1;
+    string Host = 2;      // 监听端口
+    int32  Port = 3;      // 监听端口
+    uint32 CurrConnection = 4;  // 当前连接数
+    uint32 CloseConnection = 5; // 已关连接数
+    double CpuUsage = 6;        // cpu负载，百分比
+    string Version = 7;
 }
 
 message JoinResp{
-    bool success = 1;
-    uint64 workerId = 2;
-    string errMsg = 3;
+    bool   Success = 1;
+    uint64 WorkerId = 2;
+    string ErrMsg = 3;
 }
 
 message Worker {
-    uint64 workerId = 1;
-    string listenAddr = 2;
-    uint32 currConnection = 3;
-    uint32 closeConnection=4;
-    double cpuUsage = 5;
-    int64  lastAlive = 6;
-    string version = 7;
+    uint64 WorkerId = 1;
+    string ListenAddr = 2;
+    uint32 CurrConnection = 3;
+    uint32 CloseConnection=4;
+    double CpuUsage = 5;
+    int64  LastAlive = 6;
+    string Version = 7;
 }

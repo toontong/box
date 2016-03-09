@@ -1,16 +1,19 @@
-all: build install
+all: build
 
-build: n w
+build: n w g
 
 n:
-		go build -o box_namserver github.com/toontong/box/cmd/nameserver/
+		go build -o namserver-box github.com/toontong/box/cmd/nameserver/
 
 w:
-		go build -o box_worker github.com/toontong/box/cmd/worker/
+		go build -o worker-box github.com/toontong/box/cmd/worker/
 
+g:
+		go build -o gateway-box github.com/toontong/box/cmd/gateway/
 
 install:
 		go install github.com/toontong/box/cmd/nameserver/
+		go install github.com/toontong/box/cmd/gateway/
 		go install github.com/toontong/box/cmd/worker/
 
 clean:

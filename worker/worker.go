@@ -10,30 +10,36 @@ import (
 
 	"github.com/toontong/box/libs/log"
 	"github.com/toontong/box/proto/nameserver"
+	"github.com/toontong/box/proto/ping"
 	pb "github.com/toontong/box/proto/worker"
 )
 
 type IWorker interface {
-	Report2NameServer(nameServerAddr string, period time.Duration) error
+	JoinNameServer(nameServerAddr string, period time.Duration) error
 	Stop()
-	Listen() error
+	Listen(host string, port int) error
 }
 
 type Worker struct {
+	// 继承ping/pong RPC接口
+	ping.PingService
+
 	host      string
 	port      int
 	cpuUsage  float64
 	currConn  uint32
 	closeConn uint32
 
+	workerId uint64
+
 	stop  bool
 	start time.Time
 }
 
-func NewWoker(host string, port int) *Worker {
+func NewWoker() *Worker {
 	w := new(Worker)
-	w.host = host
-	w.port = port
+
+	w.workerId = 0 // 由nameserver分配
 	w.cpuUsage = 0.08
 	w.stop = false
 	w.start = time.Now()
@@ -46,11 +52,15 @@ func (w Worker) Add(_ context.Context, req *pb.AddReq) (*pb.AddResp, error) {
 	return resp, nil
 }
 
-func (w *Worker) Listen() (net.Listener, error) {
+func (w *Worker) Listen(host string, port int) (net.Listener, error) {
+	w.host = host
+	w.port = port
 	addr := fmt.Sprintf("%s:%d", w.host, w.port)
-	lis, err := net.Listen("tcp", addr)
+
+	//TODO: just tcp4 ?
+	lis, err := net.Listen("tcp4", addr)
 	if err != nil {
-		log.Fatalf("failed to listen on[%v]: err=[%v]", addr, err)
+		log.Fatalf("Failed to listen on[%v]: err=[%v]", addr, err)
 		return nil, err
 	}
 	return lis, nil
@@ -58,46 +68,52 @@ func (w *Worker) Listen() (net.Listener, error) {
 
 func (w *Worker) Stop() { w.stop = true }
 
-func (w *Worker) Report2NameServer(nameServerAddr string, period time.Duration) error {
+func (w *Worker) JoinNameServer(nameServerAddr string, period time.Duration) error {
 	go func() {
 		var opts []grpc.DialOption
 
-		// 先不使用TLS
+		// TODO:先不使用TLS
 		opts = append(opts, grpc.WithInsecure())
+		// var conn grpc.ClientConn
+		// var err error
 
-		var nClose uint32 = 0
 		log.Infof("Will Report to NameServer[%v] every[%v].", nameServerAddr, period)
+
 		for !w.stop {
 			conn, err := grpc.Dial(nameServerAddr, opts...)
 			if err != nil {
-				log.Fatalf("fail to dial[%s]: err=[%v] ,will continue try after[%s]",
+				log.Fatalf("Failed to dial[%s]: err=[%v],will retry after[%s]",
 					nameServerAddr, err, period)
 				time.Sleep(period)
 				continue
 			}
-			defer conn.Close()
+
 			client := nameserver.NewNameServiceClient(conn)
 
 			req := nameserver.JoinReq{
+				WorkerId:        w.workerId,
 				Host:            w.host,
-				Port:            w.port,
+				Port:            int32(w.port),
 				CurrConnection:  0,
-				CloseConnection: nClose,
+				CloseConnection: w.getCloseConn(),
 				CpuUsage:        0.1,
 			}
 			resp, err := client.WorkerJoin(context.Background(), &req)
 			if err != nil {
-				log.Errorf("Failed to Report2NameServer report-thread existed. err=[%s]", err)
-				return
+				log.Fatalf("Failed to JoinNameServer[%s]: err=[%v],will retry after[%s]",
+					nameServerAddr, err)
+				continue
 			}
+			conn.Close()
 			if resp.Success {
-				log.Infof("Join NameSrv Success[%v] got WorkerId=[%v]",
-					resp.Success, resp.WorkerId)
+				log.Infof("Join NameSrv[%s] Success got WorkerId=[%v]",
+					nameServerAddr, resp.WorkerId)
+				w.workerId = resp.WorkerId
 			} else {
-				log.Infof("Failed to Join NameSrv errMsg=[%s] WorkerId=[%v]",
-					resp.ErrMsg, resp.WorkerId)
+				log.Infof("Failed to Join NameSrv errMsg=[%s] WorkerId=[%v],will retry after[%s]",
+					resp.ErrMsg, resp.WorkerId, period)
 			}
-			nClose++
+
 			time.Sleep(period)
 		}
 	}()
@@ -108,4 +124,10 @@ func (w *Worker) Report2NameServer(nameServerAddr string, period time.Duration) 
 		return fmt.Errorf("period can not less then 1 second.")
 	}
 	return nil
+}
+
+func (w *Worker) getCloseConn() uint32 {
+	//TODO this
+	w.closeConn++
+	return w.closeConn
 }

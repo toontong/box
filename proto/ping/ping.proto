@@ -6,20 +6,19 @@ syntax = "proto3";
 
 option java_multiple_files = true;
 option java_package = "io.toontong.box";
-option java_outer_classname = "BoxWorker";
+option java_outer_classname = "BoxPing";
 
-package worker;
+package ping;
 
 // Interface exported by the server.
-service Wroker {
-    rpc Add(AddReq) returns (AddResp){}
+service PingService {
+    rpc Ping(MsgPing) returns (Pong) {}
 }
 
-message AddReq {
-    int64 A = 1;
-    int64 B = 2;
+message MsgPing {
+    string Msg = 1;
 }
 
-message AddResp {
-    int64 Sum = 1;
+message Pong {
+    string Msg = 1;
 }
