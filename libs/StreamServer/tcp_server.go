@@ -1,7 +1,7 @@
 package StreamServer
 
 import (
-	"fmt"
+	// "fmt"
 	"net"
 )
 
@@ -28,12 +28,12 @@ func NewTCPServer(addr string, handler ServerHandle) *TCPServer {
 	return s
 }
 
-func (self *TCPServer) RunForever() {
+func (self *TCPServer) Serve() error {
 	ln, err := net.Listen("tcp", self.addr)
 	if err != nil {
-		panic("TCPServer error on Listen")
+		return err
 	}
-	fmt.Printf("Server Listen on TCP(%s)\n", self.addr)
+	// fmt.Printf("Server Listen on TCP(%s)\n", self.addr)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -42,5 +42,4 @@ func (self *TCPServer) RunForever() {
 		}
 		go self.handler.OnConnection(conn)
 	}
-
 }

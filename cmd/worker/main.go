@@ -7,8 +7,8 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/toontong/box/libs/log"
+	"github.com/toontong/box/proto/ping"
 	pb "github.com/toontong/box/proto/worker"
-
 	"github.com/toontong/box/worker"
 )
 
@@ -31,7 +31,10 @@ func main() {
 	var opts []grpc.ServerOption
 
 	grpcServer := grpc.NewServer(opts...)
+
 	pb.RegisterWrokerServer(grpcServer, wk)
+	ping.RegisterPingServiceServer(grpcServer, wk)
+
 	log.Infof("Work going to Servr[%v:%v]", *host, *port)
 	grpcServer.Serve(lis)
 	wk.Stop()

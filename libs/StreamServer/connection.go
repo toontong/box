@@ -47,7 +47,7 @@ func NewConnection(c net.Conn, packet IPacket, timeout time.Duration) *Connectio
 	conn.sendBuf = make(chan []byte, 32)
 	conn.recvBuf = make(chan []byte, 32)
 
-	conn.handle = handle
+	conn.packet = packet
 	return conn
 }
 
@@ -118,7 +118,7 @@ func (self *Connection) onRecv(buf []byte) {
 		buffer = buf
 	}
 
-	n := self.handle.DispatchPacket(buffer)
+	n := self.packet.DispatchPacket(buffer)
 	if n > 0 { // must > 0
 		if n < len(buffer) {
 			self._remain_mem_recvBuf.Write(buffer[n:])

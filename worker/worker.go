@@ -102,6 +102,7 @@ func (w *Worker) JoinNameServer(nameServerAddr string, period time.Duration) err
 			if err != nil {
 				log.Fatalf("Failed to JoinNameServer[%s]: err=[%v],will retry after[%s]",
 					nameServerAddr, err)
+				time.Sleep(period)
 				continue
 			}
 			conn.Close()

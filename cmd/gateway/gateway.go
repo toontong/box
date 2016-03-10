@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
-	"time"
+	// "time"
 
-	"google.golang.org/grpc"
+	// "google.golang.org/grpc"
 
 	"github.com/toontong/box/libs/log"
-	pb "github.com/toontong/box/proto/nameserver"
+	// pb "github.com/toontong/box/proto/nameserver"
 
 	"github.com/toontong/box/gateway"
 )
@@ -21,18 +21,17 @@ var (
 func main() {
 	flag.Parse()
 
-	wk := gateway.NewGateway(*host, *port)
-	lis, err := wk.Listen()
+	gw := gateway.NewGateway(*nameserver, *host, *port)
+	log.Info("Gateway Servr on[%v:%v] join NameServ[%v]", *host, *port, *nameserver)
+	err := gw.Serve()
 	if err != nil {
 		panic(err)
 	}
 
-	wk.JoinNameServer(*nameserver, 3*time.Second)
-	var opts []grpc.ServerOption
-
-	grpcServer := grpc.NewServer(opts...)
-	pb.RegisterWrokerServer(grpcServer, wk)
-	log.Infof("Work going to Servr[%v:%v]", *host, *port)
-	grpcServer.Serve(lis)
-	wk.Stop()
+	// var opts []grpc.ServerOption
+	// grpcServer := grpc.NewServer(opts...)
+	// pb.RegisterWrokerServer(grpcServer, wk)
+	// log.Infof("Work going to Servr[%v:%v]", *host, *port)
+	// grpcServer.Serve(lis)
+	// wk.Stop()
 }
